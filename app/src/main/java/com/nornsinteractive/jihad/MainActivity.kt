@@ -1,5 +1,6 @@
 package com.nornsinteractive.jihad
 
+import android.content.res.Configuration
 import android.os.Bundle
 import android.util.Log
 import android.view.*
@@ -18,6 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -110,7 +112,18 @@ class MainActivity : ComponentActivity() {
         customViewCallback?.onCustomViewHidden()
         webView.visibility = View.VISIBLE
     }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        // 可选：根据需要做横竖屏切换时的处理（如调整 UI 布局）
+        if (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+            Log.d("Orientation", "横屏")
+        } else if (newConfig.orientation == Configuration.ORIENTATION_PORTRAIT) {
+            Log.d("Orientation", "竖屏")
+        }
+    }
 }
+
 @Composable
 fun WebPage(
     onBackPressed: () -> Unit,
@@ -121,6 +134,10 @@ fun WebPage(
     val context = LocalContext.current
     var webViewInstance: WebView? = remember { null }
 
+    val configuration = LocalConfiguration.current
+    val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+
+
     // 拦截返回键
     BackHandler {
         onBackPressed()
@@ -128,18 +145,20 @@ fun WebPage(
 
     Column(modifier = Modifier.fillMaxSize()) {
 
-        // 顶部 Banner 区域（可用于放广告）
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(60.dp)
-                .background(Color(0xFF6200EE)),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = "✨ 欢迎访问 Kirakira ✨\n顶部内容，用于后期放 banner 广告",
-                color = Color.White
-            )
+        if (!isLandscape) {
+            // 顶部 Banner 区域（可用于放广告）
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(60.dp)
+                    .background(Color(0xFF6200EE)),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "✨ 欢迎访问 Kirakira ✨\n顶部内容，用于后期放 banner 广告",
+                    color = Color.White
+                )
+            }
         }
 
         // WebView 组件
