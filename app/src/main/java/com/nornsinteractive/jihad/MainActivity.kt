@@ -13,6 +13,7 @@ import androidx.activity.compose.BackHandler
 import androidx.appcompat.app.AlertDialog
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -24,6 +25,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.nornsinteractive.jihad.ui.theme.TestTheme
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.systemBars
 
 class MainActivity : ComponentActivity() {
 
@@ -142,8 +145,16 @@ fun WebPage(
     BackHandler {
         onBackPressed()
     }
-
-    Column(modifier = Modifier.fillMaxSize()) {
+    Scaffold(
+        modifier = Modifier.fillMaxSize(),
+        contentWindowInsets = WindowInsets.systemBars // 关键：让内容适应系统栏内边距
+    ) { innerPadding -> // Scaffold 会提供 innerPadding，其中包含了状态栏和导航栏的内边距
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding) // 将内边距应用到 Column
+        ) {
+//    Column(modifier = Modifier.fillMaxSize()) {
 
 //        if (!isLandscape) {
 //            // 顶部 Banner 区域（可用于放广告）
@@ -161,79 +172,80 @@ fun WebPage(
 //            }
 //        }
 
-        // WebView 组件
-        AndroidView(
-            factory = {
-                WebView(context).apply {
-                    getWebView(this)
-                    webViewInstance = this
+            // WebView 组件
+            AndroidView(
+                factory = {
+                    WebView(context).apply {
+                        getWebView(this)
+                        webViewInstance = this
 
-                    clearCache(true)
-                    clearHistory()
-                    setupWebSettings()
+                        clearCache(true)
+                        clearHistory()
+                        setupWebSettings()
 
-                    webViewClient = WebViewClient()
+                        webViewClient = WebViewClient()
 
-                    webChromeClient = object : WebChromeClient() {
-                        // JS Alert 弹窗支持
-                        override fun onJsAlert(
-                            view: WebView?,
-                            url: String?,
-                            message: String?,
-                            result: JsResult?
-                        ): Boolean {
-                            AlertDialog.Builder(context)
-                                .setMessage(message)
-                                .setPositiveButton(android.R.string.ok) { _, _ -> result?.confirm() }
-                                .setCancelable(false)
-                                .create()
-                                .show()
-                            return true
+                        webChromeClient = object : WebChromeClient() {
+                            // JS Alert 弹窗支持
+                            override fun onJsAlert(
+                                view: WebView?,
+                                url: String?,
+                                message: String?,
+                                result: JsResult?
+                            ): Boolean {
+                                AlertDialog.Builder(context)
+                                    .setMessage(message)
+                                    .setPositiveButton(android.R.string.ok) { _, _ -> result?.confirm() }
+                                    .setCancelable(false)
+                                    .create()
+                                    .show()
+                                return true
+                            }
+
+                            // JS 控制台打印输出
+                            override fun onConsoleMessage(consoleMessage: ConsoleMessage?): Boolean {
+                                Log.d("WebViewConsole", consoleMessage?.message() ?: "")
+                                return true
+                            }
+
+                            // 播放器进入全屏
+                            override fun onShowCustomView(
+                                view: View?,
+                                callback: CustomViewCallback?
+                            ) {
+                                onShowCustomView(view, callback)
+                            }
+
+                            // 播放器退出全屏
+                            override fun onHideCustomView() {
+                                onHideCustomView()
+                            }
                         }
 
-                        // JS 控制台打印输出
-                        override fun onConsoleMessage(consoleMessage: ConsoleMessage?): Boolean {
-                            Log.d("WebViewConsole", consoleMessage?.message() ?: "")
-                            return true
-                        }
+                        // 加载网页地址
+                        loadUrl("http://197795.xyz/")
 
-                        // 播放器进入全屏
-                        override fun onShowCustomView(
-                            view: View?,
-                            callback: CustomViewCallback?
-                        ) {
-                            onShowCustomView(view, callback)
-                        }
-
-                        // 播放器退出全屏
-                        override fun onHideCustomView() {
-                            onHideCustomView()
-                        }
+                        layoutParams = ViewGroup.LayoutParams(
+                            ViewGroup.LayoutParams.MATCH_PARENT,
+                            ViewGroup.LayoutParams.MATCH_PARENT
+                        )
                     }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f) // 占满剩余空间
+            )
+        }
 
-                    // 加载网页地址
-                    loadUrl("http://197795.xyz/")
-
-                    layoutParams = ViewGroup.LayoutParams(
-                        ViewGroup.LayoutParams.MATCH_PARENT,
-                        ViewGroup.LayoutParams.MATCH_PARENT
-                    )
+        // 组件卸载时清理 WebView
+        DisposableEffect(Unit) {
+            onDispose {
+                webViewInstance?.apply {
+                    stopLoading()
+                    loadUrl("about:blank")
+                    removeAllViews()
+                    destroy()
                 }
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f) // 占满剩余空间
-        )
-    }
-
-    // 组件卸载时清理 WebView
-    DisposableEffect(Unit) {
-        onDispose {
-            webViewInstance?.apply {
-                stopLoading()
-                loadUrl("about:blank")
-                removeAllViews()
-                destroy()
             }
         }
     }
