@@ -145,21 +145,21 @@ fun WebPage(
 
     Column(modifier = Modifier.fillMaxSize()) {
 
-        if (!isLandscape) {
-            // 顶部 Banner 区域（可用于放广告）
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(60.dp)
-                    .background(Color(0xFF6200EE)),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "✨ 欢迎访问 Kirakira ✨\n顶部内容，用于后期放 banner 广告",
-                    color = Color.White
-                )
-            }
-        }
+//        if (!isLandscape) {
+//            // 顶部 Banner 区域（可用于放广告）
+//            Box(
+//                modifier = Modifier
+//                    .fillMaxWidth()
+//                    .height(60.dp)
+//                    .background(Color(0xFF6200EE)),
+//                contentAlignment = Alignment.Center
+//            ) {
+//                Text(
+//                    text = "✨ 欢迎访问 Kirakira ✨\n顶部内容，用于后期放 banner 广告",
+//                    color = Color.White
+//                )
+//            }
+//        }
 
         // WebView 组件
         AndroidView(
@@ -212,7 +212,7 @@ fun WebPage(
                     }
 
                     // 加载网页地址
-                    loadUrl("https://kirakira.buzz/")
+                    loadUrl("http://197795.xyz/")
 
                     layoutParams = ViewGroup.LayoutParams(
                         ViewGroup.LayoutParams.MATCH_PARENT,
@@ -255,6 +255,9 @@ private fun WebView.setupWebSettings() {
         mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
         useWideViewPort = true
         loadWithOverviewMode = true
+
+        //修改默认访问的user agent 方便后期广告等业务的区分
+        userAgentString = "Mozilla/5.0 (Linux; Android 15; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Mobile Safari/537.36 JihadAndroid/1.0"
     }
     setInitialScale(100)
 }
