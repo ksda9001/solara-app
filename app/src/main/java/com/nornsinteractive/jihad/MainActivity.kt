@@ -223,7 +223,7 @@ fun WebPage(
                         }
 
                         // 加载网页地址
-                        loadUrl("http://197795.xyz/")
+                        loadUrl("https://lovon.dpdns.org/jihad/")
 
                         layoutParams = ViewGroup.LayoutParams(
                             ViewGroup.LayoutParams.MATCH_PARENT,
