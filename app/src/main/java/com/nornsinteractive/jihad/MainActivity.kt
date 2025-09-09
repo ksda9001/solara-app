@@ -27,10 +27,15 @@ import androidx.compose.ui.viewinterop.AndroidView
 import com.nornsinteractive.jihad.ui.theme.TestTheme
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.systemBars
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import androidx.lifecycle.lifecycleScope
+import okhttp3.OkHttpClient
+import okhttp3.Request
 
 class MainActivity : ComponentActivity() {
 
-    // 用于控制 WebView 返回、全屏状态等
     private lateinit var webView: WebView
     private var customView: View? = null
     private var customViewCallback: WebChromeClient.CustomViewCallback? = null
@@ -42,7 +47,6 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         WebView.setWebContentsDebuggingEnabled(true)
 
-        // 全屏视频容器
         fullScreenContainer = FrameLayout(this).apply {
             layoutParams = FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
@@ -51,12 +55,9 @@ class MainActivity : ComponentActivity() {
         }
 
         setContent {
-            // 将 fullScreenContainer 作为根容器（供视频全屏使用）
             AndroidView(factory = {
                 fullScreenContainer.apply {
                     removeAllViews()
-
-                    // 将 ComposeView 加入容器中（非全屏时显示）
                     addView(ComposeView(context).apply {
                         setContent {
                             TestTheme {
@@ -84,7 +85,6 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    // 显示全屏视频视图
     private fun showFullScreenView(view: View?, callback: WebChromeClient.CustomViewCallback?) {
         if (customView != null) {
             callback?.onCustomViewHidden()
@@ -92,8 +92,6 @@ class MainActivity : ComponentActivity() {
         }
         customView = view
         customViewCallback = callback
-
-        // 添加视频播放视图
         fullScreenContainer.addView(
             view,
             FrameLayout.LayoutParams(
@@ -101,12 +99,9 @@ class MainActivity : ComponentActivity() {
                 ViewGroup.LayoutParams.MATCH_PARENT
             )
         )
-
-        // 隐藏 WebView 原视图
         webView.visibility = View.GONE
     }
 
-    // 隐藏全屏视频视图
     private fun hideFullScreenView() {
         customView?.let {
             fullScreenContainer.removeView(it)
@@ -118,11 +113,36 @@ class MainActivity : ComponentActivity() {
 
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
-        // 可选：根据需要做横竖屏切换时的处理（如调整 UI 布局）
         if (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE) {
             Log.d("Orientation", "横屏")
         } else if (newConfig.orientation == Configuration.ORIENTATION_PORTRAIT) {
             Log.d("Orientation", "竖屏")
+        }
+    }
+
+    // 同步获取链接（放子线程用）
+    private fun fetchLink(apiUrl: String): String {
+        val client = OkHttpClient()
+        val request = Request.Builder().url(apiUrl).build()
+        client.newCall(request).execute().use { response ->
+            if (!response.isSuccessful) throw Exception("请求失败: ${response.code}")
+            return response.body?.string()?.trim() ?: ""
+        }
+    }
+
+    // 供 WebPage 调用，异步加载 URL
+    fun loadUrlFromApi(webView: WebView) {
+        lifecycleScope.launch {
+            try {
+                val url = withContext(Dispatchers.IO) {
+                    fetchLink("https://jihadurl.kurama-tiny.workers.dev")
+                }
+                Log.d("MainActivity", "获取到的URL: $url")
+                webView.loadUrl(url)
+            } catch (e: Exception) {
+                e.printStackTrace()
+                Log.e("MainActivity", "获取链接失败: ${e.message}")
+            }
         }
     }
 }
@@ -140,45 +160,24 @@ fun WebPage(
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
 
-
-    // 拦截返回键
     BackHandler {
         onBackPressed()
     }
+
     Scaffold(
         modifier = Modifier.fillMaxSize(),
-        contentWindowInsets = WindowInsets.systemBars // 关键：让内容适应系统栏内边距
-    ) { innerPadding -> // Scaffold 会提供 innerPadding，其中包含了状态栏和导航栏的内边距
+        contentWindowInsets = WindowInsets.systemBars
+    ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding) // 将内边距应用到 Column
+                .padding(innerPadding)
         ) {
-//    Column(modifier = Modifier.fillMaxSize()) {
-
-//        if (!isLandscape) {
-//            // 顶部 Banner 区域（可用于放广告）
-//            Box(
-//                modifier = Modifier
-//                    .fillMaxWidth()
-//                    .height(60.dp)
-//                    .background(Color(0xFF6200EE)),
-//                contentAlignment = Alignment.Center
-//            ) {
-//                Text(
-//                    text = "✨ 欢迎访问 Kirakira ✨\n顶部内容，用于后期放 banner 广告",
-//                    color = Color.White
-//                )
-//            }
-//        }
-
-            // WebView 组件
             AndroidView(
                 factory = {
                     WebView(context).apply {
                         getWebView(this)
                         webViewInstance = this
-
                         clearCache(true)
                         clearHistory()
                         setupWebSettings()
@@ -186,7 +185,6 @@ fun WebPage(
                         webViewClient = WebViewClient()
 
                         webChromeClient = object : WebChromeClient() {
-                            // JS Alert 弹窗支持
                             override fun onJsAlert(
                                 view: WebView?,
                                 url: String?,
@@ -202,13 +200,11 @@ fun WebPage(
                                 return true
                             }
 
-                            // JS 控制台打印输出
                             override fun onConsoleMessage(consoleMessage: ConsoleMessage?): Boolean {
                                 Log.d("WebViewConsole", consoleMessage?.message() ?: "")
                                 return true
                             }
 
-                            // 播放器进入全屏
                             override fun onShowCustomView(
                                 view: View?,
                                 callback: CustomViewCallback?
@@ -216,14 +212,13 @@ fun WebPage(
                                 onShowCustomView(view, callback)
                             }
 
-                            // 播放器退出全屏
                             override fun onHideCustomView() {
                                 onHideCustomView()
                             }
                         }
 
-                        // 加载网页地址
-                        loadUrl("https://lovon.dpdns.org/jihad/")
+                        // 这里不直接 loadUrl，而是交给 MainActivity 异步加载
+                        (context as? MainActivity)?.loadUrlFromApi(this)
 
                         layoutParams = ViewGroup.LayoutParams(
                             ViewGroup.LayoutParams.MATCH_PARENT,
@@ -233,11 +228,10 @@ fun WebPage(
                 },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .weight(1f) // 占满剩余空间
+                    .weight(1f)
             )
         }
 
-        // 组件卸载时清理 WebView
         DisposableEffect(Unit) {
             onDispose {
                 webViewInstance?.apply {
@@ -251,13 +245,8 @@ fun WebPage(
     }
 }
 
-// 扩展函数，配置 WebView 参数
 private fun WebView.setupWebSettings() {
     settings.apply {
-        //测试用，清除webview浏览器的缓存
-//        clearHistory()
-//        clearCache(true)
-
         javaScriptEnabled = true
         domStorageEnabled = true
         databaseEnabled = true
@@ -268,8 +257,8 @@ private fun WebView.setupWebSettings() {
         useWideViewPort = true
         loadWithOverviewMode = true
 
-        //修改默认访问的user agent 方便后期广告等业务的区分
-        userAgentString = "Mozilla/5.0 (Linux; Android 15; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Mobile Safari/537.36 JihadAndroid/1.0"
+        userAgentString =
+            "Mozilla/5.0 (Linux; Android 15; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Mobile Safari/537.36 JihadAndroid/1.0"
     }
     setInitialScale(100)
 }
