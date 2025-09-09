@@ -135,7 +135,7 @@ class MainActivity : ComponentActivity() {
         lifecycleScope.launch {
             try {
                 val url = withContext(Dispatchers.IO) {
-                    fetchLink("https://jihadurl.kurama-tiny.workers.dev")
+                    fetchLink("https://lovon.dpdns.org/jihad-url")
                 }
                 Log.d("MainActivity", "获取到的URL: $url")
                 webView.loadUrl(url)
