@@ -32,6 +32,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
@@ -144,6 +145,7 @@ fun WebPage(
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
+        containerColor = Color.Transparent,
         contentWindowInsets = WindowInsets.systemBars
     ) { innerPadding ->
         Column(
@@ -154,6 +156,7 @@ fun WebPage(
             AndroidView(
                 factory = {
                     WebView(context).apply {
+                        visibility = View.INVISIBLE // Initially hide the WebView
                         getWebView(this)
                         webViewInstance = this
                         clearCache(true)
@@ -161,6 +164,10 @@ fun WebPage(
                         setupWebSettings()
 
                         webViewClient = object : WebViewClient() {
+                            override fun onPageFinished(view: WebView, url: String) {
+                                super.onPageFinished(view, url)
+                            }
+
                             override fun onReceivedSslError(
                                 view: WebView?,
                                 handler: SslErrorHandler?,
@@ -181,6 +188,17 @@ fun WebPage(
                         }
 
                         webChromeClient = object : WebChromeClient() {
+                            override fun onProgressChanged(view: WebView, newProgress: Int) {
+                                super.onProgressChanged(view, newProgress)
+                                if (newProgress == 100) {
+                                    // A small delay to allow the page to fully render
+                                    view.postDelayed({
+                                        // Make the WebView visible now that it's rendered
+                                        view.visibility = View.VISIBLE
+                                    }, 100) // 100ms delay
+                                }
+                            }
+
                             override fun onJsAlert(
                                 view: WebView?,
                                 url: String?,

@@ -64,5 +64,6 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
     implementation(libs.okhttp)
+    implementation("androidx.palette:palette-ktx:1.0.0")
 
 }
