@@ -4,36 +4,39 @@ import android.content.res.Configuration
 import android.net.http.SslError
 import android.os.Bundle
 import android.util.Log
-import android.view.*
-import android.webkit.*
+import android.view.View
+import android.view.ViewGroup
+import android.webkit.ConsoleMessage
+import android.webkit.JsResult
+import android.webkit.SslErrorHandler
+import android.webkit.WebChromeClient
+import android.webkit.WebResourceError
+import android.webkit.WebResourceRequest
+import android.webkit.WebSettings
+import android.webkit.WebView
+import android.webkit.WebViewClient
 import android.widget.FrameLayout
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.activity.compose.BackHandler
 import androidx.appcompat.app.AlertDialog
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.nornsinteractive.solara.ui.theme.TestTheme
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.systemBars
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import androidx.lifecycle.lifecycleScope
-import okhttp3.OkHttpClient
-import okhttp3.Request
 
 class MainActivity : ComponentActivity() {
 
@@ -118,32 +121,6 @@ class MainActivity : ComponentActivity() {
             Log.d("Orientation", "横屏")
         } else if (newConfig.orientation == Configuration.ORIENTATION_PORTRAIT) {
             Log.d("Orientation", "竖屏")
-        }
-    }
-
-    // 同步获取链接（放子线程用）
-    private fun fetchLink(apiUrl: String): String {
-        val client = OkHttpClient()
-        val request = Request.Builder().url(apiUrl).build()
-        client.newCall(request).execute().use { response ->
-            if (!response.isSuccessful) throw Exception("请求失败: ${response.code}")
-            return response.body?.string()?.trim() ?: ""
-        }
-    }
-
-    // 供 WebPage 调用，异步加载 URL
-    fun loadUrlFromApi(webView: WebView) {
-        lifecycleScope.launch {
-            try {
-                val url = withContext(Dispatchers.IO) {
-                    fetchLink("https://solara-5v8.pages.dev/")
-                }
-                Log.d("MainActivity", "获取到的URL: $url")
-                webView.loadUrl(url)
-            } catch (e: Exception) {
-                e.printStackTrace()
-                Log.e("MainActivity", "获取链接失败: ${e.message}")
-            }
         }
     }
 }
@@ -236,8 +213,8 @@ fun WebPage(
                             }
                         }
 
-                        // 这里不直接 loadUrl，而是交给 MainActivity 异步加载
-                        (context as? MainActivity)?.loadUrlFromApi(this)
+                        // 加载网页地址
+                        loadUrl("https://solara-5v8.pages.dev/")
 
                         layoutParams = ViewGroup.LayoutParams(
                             ViewGroup.LayoutParams.MATCH_PARENT,
