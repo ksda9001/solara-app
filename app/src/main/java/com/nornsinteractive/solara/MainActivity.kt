@@ -1,6 +1,7 @@
-package com.nornsinteractive.jihad
+package com.nornsinteractive.solara
 
 import android.content.res.Configuration
+import android.net.http.SslError
 import android.os.Bundle
 import android.util.Log
 import android.view.*
@@ -24,7 +25,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
-import com.nornsinteractive.jihad.ui.theme.TestTheme
+import com.nornsinteractive.solara.ui.theme.TestTheme
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.systemBars
 import kotlinx.coroutines.Dispatchers
@@ -135,7 +136,7 @@ class MainActivity : ComponentActivity() {
         lifecycleScope.launch {
             try {
                 val url = withContext(Dispatchers.IO) {
-                    fetchLink("https://lovon.dpdns.org/jihad-url")
+                    fetchLink("https://solara-5v8.pages.dev/")
                 }
                 Log.d("MainActivity", "获取到的URL: $url")
                 webView.loadUrl(url)
@@ -182,7 +183,25 @@ fun WebPage(
                         clearHistory()
                         setupWebSettings()
 
-                        webViewClient = WebViewClient()
+                        webViewClient = object : WebViewClient() {
+                            override fun onReceivedSslError(
+                                view: WebView?,
+                                handler: SslErrorHandler?,
+                                error: SslError?
+                            ) {
+                                Log.e("WebView", "SSL Error: ${error?.toString()}")
+                                handler?.proceed() // In a real app, you should handle this more securely
+                            }
+
+                            override fun onReceivedError(
+                                view: WebView,
+                                request: WebResourceRequest,
+                                error: WebResourceError
+                            ) {
+                                super.onReceivedError(view, request, error)
+                                Log.e("WebView", "Error: ${error.description}")
+                            }
+                        }
 
                         webChromeClient = object : WebChromeClient() {
                             override fun onJsAlert(
@@ -258,7 +277,7 @@ private fun WebView.setupWebSettings() {
         loadWithOverviewMode = true
 
         userAgentString =
-            "Mozilla/5.0 (Linux; Android 15; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Mobile Safari/537.36 JihadAndroid/1.0"
+            "Mozilla/5.0 (Linux; Android 15; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.3595.65 Mobile Safari/537.36 Solara_Android/1.0"
     }
     setInitialScale(100)
 }

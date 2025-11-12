@@ -1,4 +1,4 @@
-package com.nornsinteractive.jihad.ui.theme
+package com.nornsinteractive.solara.ui.theme
 
 import android.os.Build
 import android.app.Activity

@@ -5,11 +5,11 @@ plugins {
 }
 
 android {
-    namespace = "com.nornsinteractive.jihad"
+    namespace = "com.nornsinteractive.solara"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.nornsinteractive.jihad"
+        applicationId = "com.nornsinteractive.solara"
         minSdk = 24
         targetSdk = 35
         versionCode = 1
